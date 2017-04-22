@@ -1,7 +1,9 @@
 """
 A program that encodes and decodes hidden messages in images through LSB steganography
 Encodes some longer passage in the red channel;
-Encodes a template revealing the message hidden in the passage on the green channel
+Encodes a template revealing the message hidden in the passage on the green
+channel, as long as the message can be written sequentially from words in the
+longer passage.
 """
 from PIL import Image, ImageFont, ImageDraw
 import textwrap
@@ -71,13 +73,16 @@ def write_text(text_to_write, message, image_size):
     curr_word_index = -1
     for word in message.split():
         short_distance = 1000
-        for location in word_locs[word]:
-            if location[0] > curr_word_index:
-                new_short_distance = location[0]-curr_word_index
-                if new_short_distance < short_distance:
-                    short_distance = new_short_distance
-                    new_location = location
-        blankdrawer.rectangle(list(new_location[1:]), (0,0,0))
+        try:
+            for location in word_locs[word]:
+                if location[0] > curr_word_index:
+                    new_short_distance = location[0]-curr_word_index
+                    if new_short_distance < short_distance:
+                        short_distance = new_short_distance
+                        new_location = location
+        except KeyError as err:
+            print('error: word not available')
+        blankdrawer.rectangle(list(new_location[1:]), (0, 0, 0))
         curr_word_index = new_location[0]
     return image_text, image_blankouts
 
@@ -140,7 +145,7 @@ if __name__ == '__main__':
     # text to encode: some message that will appear on the red channel
     text_to_encode = 'Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal. Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battlefield of that war. We have come to dedicate a portion of that field, as a final resting place for those who here gave their lives that that nation might live. It is altogether fitting and proper that we should do this. But, in a larger sense, we can not dedicate - we can not consecrate- we can not hallow - this ground. The brave men, living and dead, who struggled here, have consecrated it, far above our poor power to add or detract. The world will little note, not long remember what we say here, but it can never forget what they did here. It is for us the living, rather, to be dedicated there to the unfinished work which they ...'
     # message: what you actually want to show up from the text, on the green channel
-    message = 'our nation can forget'
+    message = 'our nation can four'
     print("Encoding the image...")
     encode_image(text_to_encode, message)
     print("Decoding the image...")
